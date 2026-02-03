@@ -22,7 +22,7 @@ def post_product(product: ProductSchema) -> ProductSchema:
 
     # Query-Insert
     with pool.connection() as conn:
-        insert_product(conn, product)
+        insert_product(conn, product.model_dump())
         conn.commit()   # Execute Logic (close connection when done)
 
     return product
