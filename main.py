@@ -22,8 +22,8 @@ def post_product(product: ProductSchema) -> ProductSchema:
 
     # Query-Insert
     with pool.connection() as conn:
-        insert_product(conn, product.model_dump())
-        conn.commit()   # Execute Logic (close connection when done)
+        with conn.transaction():
+            insert_product(conn, product)
 
     return product
 
@@ -32,5 +32,5 @@ def post_product(product: ProductSchema) -> ProductSchema:
 def insert_product(conn: Connection, product: ProductSchema):
     conn.execute(
         "INSERT INTO products_raw (product) VALUES (%s)",
-        (Json(product),)    # TODO - Explore the Syntax
+        (Json(product.model_dump()),)    # TODO - Explore the Syntax
     )
