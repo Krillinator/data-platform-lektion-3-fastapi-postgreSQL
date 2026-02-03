@@ -1,10 +1,12 @@
-# postgresql & fastapi
+~~# postgresql & fastapi
 
 ## installation
 (Use uv if that's your relevant tech)
-* `$ pip install "fastapi[standard]"`
-* `$ pip install "psycopg[binary]"`
-* `$ pip install "psycopg[pool]"`
+```bash
+pip install "fastapi[standard]"
+pip install "psycopg[binary]"
+pip install "psycopg[pool]"
+```
 
 # Run App
 * `$ fastpi dev main.py`
@@ -33,23 +35,36 @@ product JSONB NOT NULL
 );
 ```
 
-Step #2 - Create a connection with the Database using URL
-Assuming you're using PGadmin4 you can find the required data like so:
-* Username: Right-click your own database -> properties -> username
-* Password: You should know this one
-* Port: Right-click PostgreSQL 17 -> properties -> connection -> port
-* Address: same steps as with Port
+## Step 2 – Create a database connection (URL)
+
+To connect FastAPI to PostgreSQL, you need a **database URL**.
+
+If you are using **pgAdmin 4**, you can find the required values here:
+
+- **Username**  
+  Right-click your **database** → *Properties* → *Username*
+
+- **Password**  
+  The password you set when installing PostgreSQL
+
+- **Port**  
+  Right-click **PostgreSQL 17** → *Properties* → *Connection* → *Port*
+
+- **Address (host)**  
+  Found in the same place as **Port**  
+  *(Usually `localhost`)*
+
 ```python
 DATABASE_URL = "postgresql://USERNAME:PASSWORD@ADDRESS:PORT/DB_NAME"
 ```
 
-Step #3 - Implement function for Insert (fastAPI)
+Step #3 - Implement an insert function (fastAPI)
 
 ```python
 def insert_product(conn: Connection, product: ProductSchema):
     conn.execute(
         "INSERT INTO products_raw (product) VALUES (%s)",
-        (Json(product),)    # TODO - Explore the Syntax
+        (Json(product.product_dump()),)    # TODO - Explore the Syntax
     )
 ```
 
@@ -64,8 +79,8 @@ def post_product(product: ProductSchema) -> ProductSchema:
 
     # Query-Insert
     with pool.connection() as conn:
-        insert_product(conn, product)
-        conn.commit()   # Execute Logic (close connection when done)
+        with conn.transaction():
+            insert_product(conn, product)
 
     return product
 ```
@@ -83,4 +98,18 @@ Postman Test against `localhost:8000/products`:
 }
 ```
 
-## TODO : Difference between: uvicorn vs fastapi dev main.py 
+## Difference: `uvicorn` vs `fastapi dev`
+
+## `fastapi dev main.py`
+- Development mode
+- Auto-reload on file changes
+- Extra debug output
+- Slower, not production-ready
+- Intended for local development only
+
+## `uvicorn main:app`
+- Production-style server
+- No auto-reload by default
+- Faster and more stable
+- Commonly used in Docker and deployment
+- Can be extended with workers, timeouts, logging
